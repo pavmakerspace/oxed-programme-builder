@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Programme Builder | OceanX Education</title>
+<style>
+@font-face{font-family:'Zeist';src:url('assets/fonts/ZeistN2-Regular.otf') format('opentype');font-weight:400;font-display:swap}
+@font-face{font-family:'Zeist';src:url('assets/fonts/ZeistN2-Medium.otf') format('opentype');font-weight:500;font-display:swap}
+@font-face{font-family:'Zeist';src:url('assets/fonts/ZeistN2-SemiBold.otf') format('opentype');font-weight:600;font-display:swap}
+@font-face{font-family:'Zeist';src:url('assets/fonts/ZeistN2-Bold.otf') format('opentype');font-weight:700;font-display:swap}
+
+/* Visual language follows the OceanX Education slide style: sand background
+   with a faint topographic texture, cyan kicker, large uppercase headline,
+   white rounded cards with a cyan dot and short cyan bar, dotted cyan
+   connectors between cards, centred text, orange only for exceptions. */
+:root{
+  --sand:#F1F2EF;
+  --ink:#041738;
+  --body:#2B3A55;
+  --grey:#5B6770;
+  --faint:#8A949B;
+  --cyan:#46B7D3;
+  --cyan-soft:#CDEBF3;
+  --orange:#FF7438;
+  --card:#FFFFFF;
+  --sans:'Zeist',Arial,Helvetica,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--sand);color:var(--ink);font-family:var(--sans);font-size:17.5px;line-height:1.45;-webkit-font-smoothing:antialiased;min-height:100vh;position:relative}
+.topo{position:relative;isolation:isolate}
+.topo::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:url('assets/textures/grey-topography.png') center/cover no-repeat;filter:invert(1);opacity:.09}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+
+.kicker{font-weight:500;font-size:16px;letter-spacing:.04em;text-transform:uppercase;color:var(--cyan)}
+.headline{margin:10px 0 0;font-weight:600;font-size:clamp(34px,4vw,58px);line-height:1.05;letter-spacing:-.005em;text-transform:uppercase;color:var(--ink)}
+.bar-mark{display:block;width:34px;height:4px;background:var(--cyan);margin:12px auto 0}
+.dotm{display:none}
+
+.btn{border:0;border-radius:999px;padding:13px 24px;font-weight:600;font-size:15px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.btn-ink{background:var(--ink);color:#fff}
+.btn-ink:hover{background:#0B2A5E}
+.btn-ink:disabled{background:#B9C0C6;cursor:not-allowed}
+.btn-line{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.link{background:none;border:0;padding:6px 0;cursor:pointer;font-weight:500;font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:var(--cyan)}
+.link:hover{color:var(--ink)}
+
+/* ---------- builder ---------- */
+.page{max-width:1320px;margin:0 auto;padding:30px 48px 140px}
+.top{display:flex;align-items:center;justify-content:space-between}
+.top img{height:34px;display:block}
+.intro-b{margin:34px 0 26px}
+.setup{margin:18px 0 0;font-size:clamp(20px,1.9vw,26px);line-height:1.6;color:var(--grey);max-width:1100px}
+.setup select,.setup input{background:transparent;border:0;border-bottom:2px solid var(--cyan);color:var(--ink);font-weight:500;padding:0 1px;border-radius:0;font-size:inherit}
+.setup select{appearance:none;-webkit-appearance:none;cursor:pointer}
+.setup select option{font-size:17.5px}
+.setup input::placeholder{color:#B3BBC1;font-weight:400}
+.setup select:focus,.setup input:focus{outline:none;border-bottom-color:var(--ink)}
+
+.themes{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 30px}
+.themes-label{margin-top:28px}
+.pill{border:0;background:var(--card);border-radius:999px;padding:11px 20px;cursor:pointer;font-weight:500;font-size:16px;color:var(--grey);display:inline-flex;align-items:center;gap:10px}
+.pill:hover{color:var(--ink)}
+.pill[aria-checked="true"]{background:var(--ink);color:#fff;font-weight:600}
+.pill[aria-checked="true"]::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--cyan)}
+
+.timeline{display:grid;gap:22px;align-items:start}
+.grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.tcard{position:relative;background:var(--card);border-radius:12px;padding:24px 18px 22px;text-align:center}
+.tcard:not(.eol)::after{content:"";position:absolute;top:32px;right:-21px;width:20px;border-top:3px dotted var(--cyan)}
+.tcard h3{margin:0;font-weight:600;font-size:16px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink)}
+.tcard h3 small{display:block;margin-top:4px;font-weight:500;font-size:13px;letter-spacing:.04em;color:var(--cyan)}
+.mods{list-style:none;margin:18px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.card{all:unset;box-sizing:border-box;display:block;width:100%;cursor:pointer;text-align:left;border:1.5px solid #D6DEE3;border-radius:10px;padding:10px 12px;color:var(--ink);font-size:16px;line-height:1.35;background:#fff;transition:border-color .15s,background .15s}
+.card .row{display:flex;align-items:center;gap:10px}
+.card .ic{flex:none;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--cyan);color:var(--cyan);display:grid;place-items:center;font-weight:600;font-size:17.5px;line-height:1}
+.card .ic::before{content:"+"}
+.card .add{margin-left:auto;font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--cyan);opacity:0;transition:opacity .15s}
+.card:hover{border-color:var(--cyan);background:#F7FCFD}
+.card:hover .add{opacity:1}
+.card:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.card[aria-pressed="true"]{border-color:var(--cyan);background:#EAF7FA;font-weight:600}
+.card[aria-pressed="true"] .ic{background:var(--cyan);color:#fff}
+.card[aria-pressed="true"] .ic::before{content:"✓";font-size:14px}
+.card[aria-pressed="true"] .add{display:none}
+/* category identity in the builder */
+.grid .tcard.cat{padding:0 0 18px;overflow:visible;text-align:left}
+.grid .tcard.cat::after{top:30px}
+.cat-h{position:relative;background:var(--cc);color:var(--ci);border-radius:12px 12px 0 0;padding:18px 48px 16px 20px}
+.cat-h h3{margin:0;font-weight:600;font-size:16.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ci)}
+.cat-h p{margin:4px 0 0;font-size:14px;opacity:.9}
+.cat-h .count{position:absolute;top:16px;right:16px;min-width:26px;height:26px;border-radius:13px;background:var(--ci);color:var(--cc);display:grid;place-items:center;font-weight:700;font-size:13.5px;padding:0 6px}
+.grid .mods{margin:16px 16px 0}
+.grid .card .ic{border-color:var(--cc);color:var(--cc)}
+.grid .card:hover{border-color:var(--cc);background:var(--ct)}
+.grid .card[aria-pressed="true"]{border-color:var(--cc);background:var(--ct)}
+.grid .card[aria-pressed="true"] .ic{background:var(--cc);color:var(--ci)}
+.grid .card .add{color:var(--ink)}
+.card .d{display:block;margin:8px 0 0 32px;font-weight:400;font-size:14.5px;line-height:1.45;color:var(--body)}
+.card .d em{font-style:normal;font-weight:500}
+.card .why{display:block;margin:0 0 6px 32px;font-weight:600;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:#B07A00}
+.card.sug{border-color:#F2C14E;border-style:dashed;background:#FFFCF2}
+.card.sug .ic{border-color:#E0A800;color:#B07A00}
+.card.flag{border-color:var(--orange)}
+.card.flag .why{color:var(--orange)}
+
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;z-index:10;box-shadow:0 -1px 0 #E2E5E1}
+.bar-in{max-width:1320px;margin:0 auto;padding:14px 48px;display:flex;align-items:center;gap:24px}
+.bar .tname{font-weight:600;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+.bar .seq{flex:1;min-width:0;font-size:15.5px;color:var(--grey);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .seq b{font-weight:600;color:var(--ink)}
+.bar .seq .ar{color:var(--cyan);margin:0 8px;font-weight:600}
+.fit{flex:none;font-weight:600;font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--cyan);cursor:help}
+.fit[hidden]{display:none}
+.fit.auto,.fit.thin{color:#B07A00}
+.fit.over{color:var(--orange)}
+
+/* ---------- overview ---------- */
+.sheet{position:fixed;inset:0;background:var(--sand);overflow:auto;z-index:20;opacity:0;visibility:hidden;transition:opacity .2s,visibility 0s .2s}
+body.show .sheet{opacity:1;visibility:visible;transition:opacity .2s}
+body.show{overflow:hidden}
+.sheet-bar{display:flex;justify-content:space-between;align-items:center;max-width:1320px;margin:0 auto;padding:20px 48px 0}
+.slide{max-width:1320px;margin:0 auto;padding:30px 48px 40px}
+.slide + .slide{padding-top:10px}
+.slide h1{outline:none}
+.slide h1:focus{text-decoration:underline;text-decoration-color:var(--cyan);text-underline-offset:8px}
+.meta{margin:16px 0 0;font-size:20.5px;color:var(--grey)}
+.meta b{font-weight:600;color:var(--ink)}
+.steps{margin-top:34px}
+.steps .tcard{padding:22px 14px 20px}
+.steps .ph{display:block;margin-top:14px;font-weight:500;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--cyan)}
+.steps h3{margin-top:4px;font-size:15.5px;line-height:1.25}
+.steps p{margin:12px 0 0;font-size:15px;line-height:1.45;color:var(--body)}
+.edit{outline:none;border-radius:4px;cursor:text}
+.edit:hover{background:#F1F8FA}
+.edit:focus{background:#EAF7FA;box-shadow:0 0 0 2px var(--cyan)}
+.steps a{color:var(--ink);font-weight:600}
+.phases{margin-top:34px}
+.phases .tcard{padding:0 0 22px;text-align:left}
+.phases .tcard::after{top:31px}
+.ph-h{background:var(--pc);color:var(--pi);border-radius:12px 12px 0 0;height:64px;padding:0 20px;display:flex;align-items:center;gap:12px}
+.ph-h .num{font-weight:600;font-size:30px;line-height:1;letter-spacing:-.02em;opacity:.55;display:block}
+.ph-h h3{margin:0;font-size:18px;line-height:1;letter-spacing:.05em;color:var(--pi);padding-top:2px}
+.phases .tcard.share .ph-h .num{color:var(--orange);opacity:1}
+.phases p{margin:16px 20px 0;font-size:17px;line-height:1.45;color:var(--ink)}
+.phases .tags{justify-content:flex-start;margin:14px 20px 0}
+.tags{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:16px}
+.tags a{font-size:13.5px;font-weight:600;color:var(--ink);background:#DDF0F6;border-radius:999px;padding:4px 10px;text-decoration:none}
+.tags span{font-size:12.5px;font-weight:500;color:var(--body);background:#EEF6F9;border-radius:999px;padding:4px 10px}
+.tcard.share .bar-mark{background:var(--orange)}
+.olp-band{margin-top:22px;background:#fff;border-radius:12px;padding:24px 26px;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:36px}
+.olp-band h3{margin:0 0 14px;font-weight:600;font-size:15.5px;letter-spacing:.03em;text-transform:uppercase}
+.olp-list ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.olp-list li{display:flex;align-items:center;gap:10px;font-size:15.5px;line-height:1.3;color:var(--ink)}
+.olp-list li b{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--cyan);color:#fff;font-size:13px}
+.olp-how{border-left:4px solid var(--cyan);padding-left:20px;display:flex;flex-direction:column;gap:12px}
+.olp-how h3{margin-bottom:4px}
+.olp-how div{font-size:15.5px;line-height:1.4;color:var(--body)}
+.olp-how div b{display:block;font-weight:600;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--cyan)}
+
+.lead-h{margin:8px 0 0;font-weight:600;font-size:clamp(24px,2.6vw,36px);line-height:1.15;text-transform:uppercase;max-width:30ch}
+.stages{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:28px}
+.stages p{margin:12px 0 0;font-size:15.5px;line-height:1.5;color:var(--body)}
+.forces{display:grid;grid-template-columns:minmax(0,1fr) 48px minmax(0,1.25fr) 48px minmax(0,1fr);align-items:stretch;margin-top:28px}
+.fcard{background:#fff;border-radius:12px;padding:24px 24px 26px}
+.fcard h3{margin:0 0 14px;padding-bottom:12px;border-bottom:3px solid var(--cyan);display:inline-block;font-weight:600;font-size:15.5px;letter-spacing:.03em;text-transform:uppercase}
+.fcard p{margin:0;font-size:16px;line-height:1.5;color:var(--body)}
+.fcard ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.fcard li{font-size:15px;line-height:1.45;color:var(--body)}
+.fcard li b,.who-line b{display:block;font-weight:600;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--cyan)}
+.fcard .who-line{margin-top:16px;padding-top:14px;border-top:1px solid #E6EAEC;font-size:15px}
+.forces .fcard:not(.prog){margin:22px 0;background:rgba(255,255,255,.75)}
+.fcard.prog{text-align:center;background:var(--ink);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 36px;box-shadow:0 18px 40px rgba(4,23,56,.18)}
+.fcard.prog h3{color:var(--cyan);border-bottom-color:var(--orange);font-size:16.5px}
+.fcard.prog p{font-size:22px;line-height:1.45;color:#fff;font-weight:500;max-width:30ch}
+.farrow{display:grid;place-items:center;color:var(--ink);font-size:32px;font-weight:600}
+.sub-k{margin-top:40px}
+.qa{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:16px}
+.qa > div{border-top:4px solid var(--cyan);padding-top:14px}
+.qa h3{margin:0;font-weight:600;font-size:16px;letter-spacing:.03em;text-transform:uppercase}
+.qa p{margin:8px 0 0;font-size:16px;line-height:1.5;color:var(--body)}
+.foot{display:flex;justify-content:space-between;align-items:flex-end;max-width:1320px;margin:0 auto;padding:10px 48px 30px}
+.foot img{height:34px;display:block}
+.foot p{margin:0;font-size:14.5px;color:var(--grey);max-width:60ch;text-align:right}
+
+@media screen and (max-width:1000px){
+  .grid,.stages{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .forces{grid-template-columns:1fr}.farrow{transform:rotate(90deg);height:36px}
+  .olp-band{grid-template-columns:1fr}
+  .qa{grid-template-columns:1fr}
+  .steps,.phases{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .tcard::after{display:none}
+}
+@media screen and (max-width:640px){
+  .page,.bar-in,.sheet-bar,.slide,.foot{padding-left:16px;padding-right:16px}
+  .grid,.stages,.steps,.phases,.forces,.qa{grid-template-columns:1fr!important}
+  .bar .seq{display:none}
+  .foot{flex-direction:column;align-items:flex-start;gap:12px}.foot p{text-align:left}
+}
+@media print{
+  @page{size:A4 landscape;margin:0}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  html,body,body.show{background:var(--sand);overflow:visible!important;height:auto!important;min-height:0}
+  .topo:not(.sheet),.bar,.sheet-bar{display:none!important}
+  .topo::before{display:none}
+  .sheet{position:static!important;inset:auto;opacity:1!important;visibility:visible!important;overflow:visible!important;transition:none;background:transparent;zoom:.72;padding:16mm 16mm 0}
+  .slide,.foot{max-width:none;padding:0 4px 14px}
+  .slide + .slide{padding-top:0}
+  .headline{font-size:44px}
+  .tcard{break-inside:avoid}
+  .slide.leads{break-before:page;padding-top:16mm}
+  .qa-s{break-inside:avoid}
+  .edit:hover{background:none}
+  .foot{break-inside:avoid;padding-top:6px}
+  .lead-h{font-size:30px}
+  .forces{margin-top:18px}
+  .fcard{padding:18px 20px 20px}
+  .sub-k{margin-top:22px}
+  .stages{margin-top:16px}
+  .stages .tcard{padding:16px 16px 16px}
+  .stages .tcard h3{margin-top:10px}
+  .qa{margin-top:10px}
+  .qa > div{padding-top:10px}
+}
+</style>
+</head>
+<body>
+
+<div class="topo">
+<main class="page">
+  <header class="top">
+    <img src="assets/logos/OceanX-Education-Logo-Dark.png" alt="OceanX Education">
+    <button class="link" id="resetBtn" type="button">Start over</button>
+  </header>
+
+  <div class="intro-b">
+    <div class="kicker">Programme builder</div>
+    <h1 class="headline">Build a learning journey</h1>
+    <p class="setup">
+      A <select id="duration" aria-label="Duration"></select>
+      programme for <select id="audience" aria-label="Audience"></select>,
+      reaching <input id="learners" inputmode="numeric" placeholder="?" aria-label="Number of learners"> learners,
+      in collaboration with <input id="org" aria-label="Organisation name" autocomplete="off">.
+    </p>
+    <div class="kicker themes-label"><span id="themeWord">Themes</span> <span id="themeHint" style="color:var(--grey);text-transform:none;letter-spacing:0;font-weight:400;margin-left:8px"></span></div>
+    <div class="themes" id="themes" role="group" aria-label="Science themes"></div>
+    <div class="kicker">Modules <span style="color:var(--grey);text-transform:none;letter-spacing:0;font-weight:400;margin-left:8px">Click a module to add it to the programme</span></div>
+  </div>
+
+  <div class="timeline grid" id="grid" style="margin-top:12px"></div>
+</main>
+</div>
+
+<div class="bar" role="region" aria-label="Your programme">
+  <div class="bar-in">
+    <span class="tname" id="trayTheme"></span>
+    <div class="seq" id="picked"></div>
+    <span class="fit" id="fit" role="status" hidden></span>
+    <button class="btn btn-ink" id="viewBtn" type="button" disabled>View overview →</button>
+  </div>
+</div>
+
+<section class="sheet topo" id="sheet" aria-label="Programme overview">
+  <div class="sheet-bar">
+    <button class="link" id="backBtn" type="button">← Back to builder</button>
+    <button class="btn btn-line" id="printBtn" type="button">Save as PDF</button>
+  </div>
+  <article id="doc"></article>
+</section>
+
+<script>
+/* =========================================================
+   CONTENT: edit here
+   The chosen science theme fills in the wording of every module.
+   ========================================================= */
+
+const THEMES = [
+  { id:"reefs", name:"Coral Reefs", title:"Reefs Under Pressure",
+    desc:"Trace how changes in reef conditions affect the organisms and communities that depend on them.",
+    basics:"What is a coral, and how does a reef form?",
+    now:"Reefs are changing quickly as the ocean warms.",
+    future:"More people with the knowledge and skills to help coral reefs recover.",
+    topic:"coral reefs", place:"a living coral reef", data:"reef temperature and coral health data",
+    measure:"water temperature and light", story:"a reef as its conditions change",
+    challenge:"protecting a reef under pressure", people:"the communities and fisheries that depend on reefs" },
+  { id:"light", name:"Bioluminescence", title:"Living Light",
+    desc:"Compare how marine organisms use light and explain what it helps them do.",
+    basics:"What is bioluminescence, and how do living things make light?",
+   
+    now:"Interest in exploring and mining the deep sea is growing faster than public understanding of it.",
+    future:"More people who understand the deep ocean and can make the case for protecting it.",
+    topic:"bioluminescence", place:"the deep ocean, where most light comes from living things", data:"observations of light signals from deep-sea species",
+    measure:"light", story:"how deep-sea creatures use light to communicate, hunt and hide",
+    challenge:"helping people understand a part of the ocean they cannot visit", people:"the people and species connected to the deep ocean" },
+  { id:"microbes", name:"Microbial Worlds", title:"The Invisible Ocean",
+    desc:"Use a model to explore the role microbes play in a marine ecosystem.",
+    basics:"What are marine microbes, and where do they live?",
+    now:"Microbes do much of the ocean's work, yet most people have never heard of them.",
+    future:"More people who understand the role microbes play in ocean health.",
+    topic:"ocean microbes", place:"a single drop of seawater", data:"plankton and microbe sampling data",
+    measure:"water quality", story:"the invisible life in a drop of seawater",
+    challenge:"making invisible ocean life matter to people", people:"the coastal communities that depend on healthy water" },
+  { id:"extreme", name:"Extreme Oceans", title:"Life at the Extremes",
+    desc:"Compare how marine life survives under different ocean conditions.",
+    basics:"What makes an ocean environment extreme?",
+    now:"New tools are opening up parts of the ocean that were out of reach until recently.",
+    future:"More people equipped to explore and study the deep and extreme ocean.",
+    topic:"extreme ocean environments", place:"a deep-sea vent or ocean trench", data:"temperature, depth and pressure data",
+    measure:"temperature", story:"life surviving at the ocean's extremes",
+    challenge:"exploring places people cannot easily reach", people:"the explorers, scientists and communities shaped by extreme ocean places" }
+];
+
+/* The seven Ocean Literacy Principles, named as in "90min sessions/Principle Tracks". */
+const OLP = {1:"One Big Ocean", 2:"Ocean Shapes Earth", 3:"Ocean Influences Weather and Climate", 4:"Ocean Made Earth Habitable",
+  5:"Ocean Supports a Great Diversity of Life", 6:"Ocean and Humans Are Interconnected", 7:"Ocean Is Largely Unexplored"};
+
+const CATEGORIES = [
+  {id:"creativity", name:"Creativity",            color:"#FF7438", ink:"#FFFFFF", tint:"#FFF1EA", hint:"Imagine, tell and make"},
+  {id:"technology", name:"Technology",            color:"#0072CE", ink:"#FFFFFF", tint:"#E6F1FB", hint:"Work with real tools and data"},
+  {id:"creative",   name:"Creative Technologies", color:"#FFC846", ink:"#041738", tint:"#FFF8E3", hint:"Build immersive experiences"},
+  {id:"innovation", name:"Innovation",            color:"#46B7D3", ink:"#041738", tint:"#EAF7FA", hint:"Look ahead and design for change"}
+];
+
+/* order = position in the journey; phase = label on the overview;
+   build = needs a long build block (counts double for time);
+   make = what it adds to the final piece of work (blank if nothing) */
+const MODULES = [
+  {cat:"creativity", title:"Ideation Techniques", order:25, phase:"Imagine",
+   text:"Generate ideas for the challenge they framed, and develop a promising one.", make:""},
+  {cat:"creativity", title:"Bringing an Idea to Life", order:45, phase:"Make",
+   text:"Turn an idea about <em>{topic}</em> into something people can see, hear or interact with.", make:"a working prototype"},
+  {cat:"creativity", title:"Transmedia Storytelling", order:50, phase:"Tell",
+   text:"Tell the story of <em>{story}</em> across formats, with each one adding something new for the audience to discover.", make:"a story told across formats"},
+  {cat:"technology", title:"Sensors and Connected Devices", order:10, build:true, phase:"Investigate",
+   text:"Use Arduino or other microcontrollers to collect readings of <em>{measure}</em> and explore how connected devices share that data.", make:"a working sensor"},
+  {cat:"technology", title:"Data Visualisation", order:12, phase:"Investigate",
+   text:"Turn <em>{data}</em> into a map or chart that helps someone see a pattern.", make:"a map or chart"},
+  {cat:"technology", title:"Artificial Intelligence", order:13, phase:"Investigate",
+   text:"Apply AI tools to analyse <em>{data}</em> or generate ideas, and evaluate what the results get right and wrong.", make:""},
+  {cat:"technology", title:"3D Design and Printing", order:41, build:true, phase:"Make",
+   text:"Design and test a 3D printed model or prototype that responds to <em>{challenge}</em>.", make:"a 3D printed model"},
+  {cat:"creative",   title:"Game Engines", order:42, build:true, phase:"Make",
+   text:"Use game engine technologies to build an interactive experience that puts people inside <em>{place}</em>.", make:"a playable interactive scene"},
+  {cat:"creative",   title:"Interactive Media with TouchDesigner", order:43, build:true, phase:"Make",
+   text:"Use <em>{data}</em> to create a visual experience that responds to an audience's actions.", make:"a responsive visual installation"},
+  {cat:"innovation", title:"Build Blue Futures", order:20, phase:"Imagine",
+   text:"Use what they found to explore the drivers of change for <em>{topic}</em> and build plausible scenarios for <em>{people}</em>.", make:"a picture of a possible future"},
+  {cat:"innovation", title:"Design for a Blue Economy", order:40, phase:"Make",
+   text:"Develop a response to <em>{challenge}</em> that considers <em>{people}</em> and the ecosystem it would affect.", make:"a proposed response"}
+].map((m,i) => ({...m, id:"m"+i}));
+
+/* Wording that changes with the combination chosen. For each module, the
+   first rule whose listed module is also selected wins. Each rule:
+   [modules that trigger it, description, optional new "make" text].
+   Anything not covered can be rewritten by clicking it on the overview. */
+const VARIANTS = {
+  "Ideation Techniques": [
+    [["Build Blue Futures"], "Step into one of the futures they imagined and generate ideas for life in that world: what people need, make and do there. Develop a promising one."],
+    [["Sensors and Connected Devices","Data Visualisation","Artificial Intelligence"], "Generate ideas for the challenge they framed, using the patterns in their data, and develop a promising one."]],
+  "Build Blue Futures": [
+    [["Sensors and Connected Devices","Data Visualisation","Artificial Intelligence"], "Use the trends in their data to explore the drivers of change for <em>{topic}</em> and build plausible scenarios for <em>{people}</em>."]],
+  "Bringing an Idea to Life": [
+    [["Build Blue Futures"], "Turn an idea from the future they imagined into something people can see, hear or interact with.", "a prototype from a possible future"],
+    [["Ideation Techniques"], "Turn their strongest idea into something people can see, hear or interact with."]],
+  "Transmedia Storytelling": [
+    [["Build Blue Futures"], "Tell the story of the future they imagined for <em>{topic}</em> across formats, with each one adding something new for the audience to discover.", "a story of a possible future told across formats"],
+    [["Game Engines","Interactive Media with TouchDesigner"], "Tell the story of <em>{story}</em> across formats, with what they build as one part and each format adding something new for the audience to discover."]],
+  "Data Visualisation": [
+    [["Sensors and Connected Devices"], "Turn their own sensor readings, alongside <em>{data}</em>, into a map or chart that helps someone see a pattern."]],
+  "Artificial Intelligence": [
+    [["Sensors and Connected Devices"], "Apply AI tools to analyse their sensor readings and <em>{data}</em>, and evaluate what the results get right and wrong."]],
+  "3D Design and Printing": [
+    [["Sensors and Connected Devices"], "Design and test a 3D printed housing or prototype that puts their sensor to work on <em>{challenge}</em>."],
+    [["Build Blue Futures"], "Design and test a 3D printed model of an object from the future they imagined for <em>{topic}</em>.", "a 3D printed object from a possible future"],
+    [["Ideation Techniques"], "Design and test a 3D printed prototype of their strongest idea."]],
+  "Game Engines": [
+    [["Build Blue Futures"], "Use game engine technologies to build a playable world set in the future they imagined for <em>{topic}</em>.", "a playable future world"],
+    [["Sensors and Connected Devices"], "Use game engine technologies to build an interactive experience of <em>{place}</em> that responds to their live sensor readings."]],
+  "Interactive Media with TouchDesigner": [
+    [["Sensors and Connected Devices"], "Use the live readings from their sensors to create a visual experience that responds to an audience's actions."],
+    [["Build Blue Futures"], "Use <em>{data}</em> to create a visual experience that shows how <em>{topic}</em> could change across the futures they imagined."]],
+  "Design for a Blue Economy": [
+    [["Build Blue Futures"], "Develop a response that would work in the future they imagined, considering <em>{people}</em> and the ecosystem it would affect."]]
+};
+const isSel = title => MODULES.some(x => x.title === title && state.selected.has(x.id));
+function wording(m){
+  const v = (VARIANTS[m.title] || []).find(([need]) => need.some(isSel));
+  return v ? {text:v[1], make:v[2] ?? m.make} : {text:m.text, make:m.make};
+}
+
+/* Modules below this order number investigate; a Define step follows them. */
+const DEFINE_AT = 20;
+
+/* group picks which wording set an audience uses: school students,
+   older learners (undergraduates, postgraduates, young adults), or educators. */
+const AUDIENCES = [
+  {id:"primary",   label:"primary school students", group:"students"},
+  {id:"high",      label:"high school students",    group:"students"},
+  {id:"undergrad", label:"undergraduates",          group:"youth"},
+  {id:"postgrad",  label:"postgraduates",           group:"youth"},
+  {id:"young",     label:"young adults",            group:"youth"},
+  {id:"educators", label:"educators",               group:"educators"}
+];
+
+/* The Define step grows with the learner profile. */
+const DEFINE_STEP = {
+  students:  {title:"Frame the Challenge",
+    o:"turn what they found about {topic} into a clear challenge: what should their audience leave with, and why will it matter to them?"},
+  youth:     {title:"Reframe the Challenge",
+    o:"question the first problem they see, look at it from another angle, and choose the challenge worth taking on."},
+  educators: {title:"Frame the Challenge for Your Learners",
+    o:"turn what they found into a challenge their own students could take on."},
+};
+
+/* Rough time check: a module counts 1, a build-heavy module 2, the opening
+   basics hour plus the science theme 2. cap = what each format holds.
+   Adjust once there is real delivery data. */
+const DURATIONS = [
+  {id:"half",  label:"half-day",   show:"Half day",   cap:3},
+  {id:"day",   label:"1-day",    show:"1 day",      cap:5},
+  {id:"two",   label:"2-day",    show:"2 days",     cap:8},
+  {id:"three", label:"3-day",  show:"3 days",     cap:11},
+  {id:"week",  label:"week-long",  show:"1 week",     cap:13, min:6},
+  {id:"multi", label:"multi-week", show:"Multi-week", cap:Infinity, min:8}
+];
+
+/* Funder-facing wording. Plain, with the learners as the subject.
+   Draft: confirm with Partnerships before use. */
+const CLOSE_DEFAULT = "{Learners} explore {topic} through real research, make something of their own, and find out whether the ocean could be part of their future.";
+const CLOSE_BY_AUDIENCE = {
+  educators: "Educators gain the confidence and material to bring {topic} into their classrooms, so their students can find out whether the ocean could be part of their future."
+};
+
+/* Where this leads: Curiosity, Careers, Changemakers.
+   Onward routes name existing OceanX programmes: confirm before use. */
+/* Why this matters now. The forces that move people toward change:
+   what is pushing for change (the theme's situation and the learner's own
+   struggle), what keeps things as they are, and the worries that stop
+   someone saying yes. Plain words only on the page. Draft: confirm. */
+const STRUGGLE = {
+  students:  "Many {label} care about the ocean but can't see how it connects to their own future.",
+  youth:     "Many {label} want to work on the ocean but don't know where to start.",
+  educators: "Many educators want to teach the ocean but lack material that goes beyond the textbook."
+};
+const HOLDING_BACK = {
+  students:  "Ocean careers are often seen as only for marine scientists, and ocean learning rarely leaves the textbook.",
+  youth:     "Ocean careers are often seen as only for marine scientists, and few routes in are visible from outside.",
+  educators: "Ocean topics sit at the edges of crowded curricula, and there is little time to build new material."
+};
+const QUESTIONS = [
+  ["Will it go beyond a one-off?", "Learners finish by presenting something they made, and those who want more have clear next steps into other OceanX programmes."],
+  ["Is the science sound?", "Each theme is built on the Ocean Literacy Principles and starts from published research, so learners work from real evidence."],
+  ["How will we know it worked?", "We agree with you before the programme starts what to look for, and report back on it afterwards."]
+];
+
+const PIPELINE = {
+  students: [
+    ["This programme", "{Who} explore {topic} and make {work}."],
+    ["Next steps", "Those who want more can join a hackathon, Young Explorers or the Education Impact Challenge."],
+    ["Ocean careers", "Some go on to study or work in ocean science, technology, design and media."],
+    ["Changemakers", "Some lead ocean projects of their own and join the Changemakers Community."]],
+  youth: [
+    ["This programme", "{Who} explore {topic} and make {work}."],
+    ["Next steps", "Those who want more can apply to a hackathon, the Education Impact Challenge, a Residency or the Ocean Futures Fellowship."],
+    ["Ocean careers", "Some go on to study or work in ocean science, technology, design and media."],
+    ["Changemakers", "Some lead ocean projects of their own and join the Changemakers Community."]],
+  educators: [
+    ["This programme", "{Who} explore {topic} and make {work} they can run again with their classes."],
+    ["Next steps", "Educators can continue into professional development workshops and curriculum work."],
+    ["In classrooms", "Their students take part, and some join OceanX programmes themselves."],
+    ["Changemakers", "Educators and students who lead ocean projects can join the Changemakers Community."]]
+};
+
+/* =========================================================
+   LOGIC
+   ========================================================= */
+const state = {org:"", duration:"day", audience:"high", learners:"", themes:new Set(["reefs"]), selected:new Set(), title:null, extended:false, edits:{}};
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* With several themes, learners choose one, so module wording refers to
+   "their chosen theme" instead of a single topic. */
+const CHOSEN = {topic:"their chosen theme", place:"the ocean environment of their chosen theme", data:"data from their chosen theme",
+  measure:"conditions in their chosen theme's environment", story:"their chosen theme", challenge:"a challenge from their chosen theme",
+  people:"the people and ecosystems connected to it"};
+/* Three or more tracks turn the programme into a hackathon. */
+const HACK_AT = 3;
+const isHack = () => state.themes.size >= HACK_AT;
+const theme = () => {
+  const ts = THEMES.filter(t => state.themes.has(t.id));
+  if (ts.length === 1) return {...ts[0], list:ts, topics:ts[0].topic, word:"theme"};
+  const word = ts.length >= HACK_AT ? "track" : "theme";
+  const chosen = Object.fromEntries(Object.entries(CHOSEN).map(([k,v]) => [k, v.replace(/theme/g, word)]));
+  return {...chosen, multi:true, word, list:ts, id:"multi", name:ts.map(t => t.name).join(" + "), title:word === "track" ? "OceanX Hackathon" : "Choose Your Ocean",
+    desc:`Investigate the core science of their chosen ${word}.`, topics:listJoin(ts.map(t => t.topic)),
+    future:"More people with the knowledge and skills to understand and protect the ocean.",
+    now:ts.map(t => t.now).join(" ")};
+};
+const aud = () => AUDIENCES.find(a => a.id === state.audience);
+const dur = () => DURATIONS.find(d => d.id === state.duration);
+const cat = id => CATEGORIES.find(c => c.id === id);
+const fill = (tpl, o, html) => tpl.replace(/\{(\w+)\}/g, (_, k) => html ? esc(o[k]) : o[k]);
+const plain = s => s.replace(/<\/?em>/g, "");
+const lc = s => s.charAt(0).toLowerCase() + s.slice(1);
+const uc = s => s.charAt(0).toUpperCase() + s.slice(1);
+const listJoin = a => a.length < 2 ? a.join("") : a.slice(0,-1).join(", ") + " and " + a[a.length-1];
+const ordered = () => MODULES.filter(m => state.selected.has(m.id)).sort((a,b) => a.order - b.order);
+const load = (mods = ordered()) => 2 + (state.themes.size > 1 ? 1 : 0) + (isHack() ? 1 : 0) + mods.reduce((n,m) => n + (m.build ? 2 : 1), 0);
+
+/* ---------- setup sentence ---------- */
+function initSetup(){
+  $("#duration").innerHTML = DURATIONS.map(d => `<option value="${d.id}">${d.label}</option>`).join("");
+  $("#audience").innerHTML = AUDIENCES.map(a => `<option value="${a.id}">${a.label}</option>`).join("");
+  syncSetup();
+}
+const _ctx = document.createElement("canvas").getContext("2d");
+function fitWidth(el, text, extra){
+  _ctx.font = getComputedStyle(el).font;
+  el.style.width = Math.ceil(_ctx.measureText(text).width + extra) + "px";
+}
+function syncSetup(){
+  $("#duration").value = state.duration; $("#audience").value = state.audience;
+  document.querySelectorAll(".setup select").forEach(s => fitWidth(s, s.options[s.selectedIndex].text, 6));
+  const l = $("#learners"), o = $("#org");
+  fitWidth(o, o.value || "Organisation name here", 10);
+  fitWidth(l, l.value || l.placeholder, 12);
+}
+
+/* ---------- guidance on the cards and the time fit ---------- */
+function analyse(){
+  const mods = ordered(), d = dur();
+  const suggest = new Map(), flag = new Map();
+  const hackFit = {cls:"ok", text:`Hackathon · ${d.show.toLowerCase()}`, tip:"3 or more tracks make this a hackathon ending in a digital immersive experience."};
+  const immersive = ["Game Engines","Interactive Media with TouchDesigner"];
+  if (isHack() && !immersive.some(isSel))
+    immersive.forEach(tt => { const m = MODULES.find(x => x.title === tt); suggest.set(m.id, "Builds the immersive experience"); });
+  if (!mods.length) return {suggest, flag, fit: isHack() ? hackFit : null};
+  const L = load(mods);
+  const has = ph => mods.some(m => m.phase === ph);
+  const sel = title => mods.some(m => m.title === title);
+  const offer = (titles, why) => titles.forEach(tt => {
+    const m = MODULES.find(x => x.title === tt);
+    if (m && !state.selected.has(m.id) && (!m.build || L + 2 <= d.cap)) suggest.set(m.id, why);
+  });
+  if (sel("Sensors and Connected Devices") && !sel("Data Visualisation") && !sel("Artificial Intelligence"))
+    offer(["Data Visualisation","Artificial Intelligence"], "Turns the readings into evidence");
+  if ((has("Make") || has("Tell")) && !has("Imagine"))
+    offer(["Ideation Techniques","Build Blue Futures"], "Explore ideas before building");
+  if (has("Imagine") && !has("Make") && !has("Tell"))
+    offer(["Bringing an Idea to Life","Transmedia Storytelling","Game Engines"], "Lets learners build what they imagined");
+  const outputs = mods.filter(m => m.phase === "Make" || m.phase === "Tell");
+  if (outputs.length >= 3) outputs.forEach(m => flag.set(m.id, `${outputs.length} things to build: keep 1 or 2`));
+
+  let fit;
+  if (L > d.cap){
+    const better = DURATIONS.find(x => x.cap >= L);
+    mods.filter(m => m.build).forEach(m => { if (!flag.has(m.id)) flag.set(m.id, "Needs a long build block"); });
+    fit = {cls:"over", text:`Too much for ${d.show.toLowerCase()}${better ? ": try " + better.show.toLowerCase() : ""}`, tip:"Drop a module or choose a longer programme."};
+  } else if (isHack()){
+    fit = hackFit;
+  } else if (state.extended){
+    fit = {cls:"auto", text:`Extended to ${d.show.toLowerCase()}`, tip:"The modules chosen need more time, so the programme was lengthened."};
+  } else if (d.min && L < d.min){
+    fit = {cls:"thin", text:`Room for more in ${d.show.toLowerCase()}`, tip:"Add modules or choose a shorter programme."};
+  } else {
+    fit = {cls:"ok", text:`Fits ${d.show.toLowerCase()}`, tip:"Rough estimate. Build-heavy modules count double."};
+  }
+  return {suggest, flag, fit};
+}
+
+/* ---------- builder ---------- */
+function renderThemes(){
+  $("#themeWord").textContent = isHack() ? "Tracks" : "Themes";
+  $("#themeHint").innerHTML = isHack()
+    ? '<b style="color:var(--ink)">Hackathon:</b> 3 days, teams choose a track and build a digital immersive experience'
+    : "Pick 1, or several for learners to choose from. 3 or more makes it a hackathon";
+  $("#themes").innerHTML = THEMES.map(t =>
+    `<button type="button" class="pill" role="checkbox" data-theme="${t.id}" aria-checked="${state.themes.has(t.id)}" aria-label="${esc(t.name)}" title="${esc(t.desc)}">${esc(t.name)}</button>`).join("");
+}
+
+function renderGrid(){
+  const t = theme(), {suggest, flag} = analyse();
+  $("#grid").innerHTML = CATEGORIES.map((c, ci) => {
+    const mods = MODULES.filter(m => m.cat === c.id).sort((x,y) => x.title.localeCompare(y.title));
+    const n = mods.filter(m => state.selected.has(m.id)).length;
+    return `<section class="tcard cat${ci === CATEGORIES.length - 1 ? " eol" : ""}" style="--cc:${c.color};--ci:${c.ink};--ct:${c.tint}">
+      <header class="cat-h"><h3>${c.name}</h3><p>${c.hint}</p>${n ? `<span class="count">${n}</span>` : ""}</header>
+      <div class="mods">${mods.map(m => {
+        const on = state.selected.has(m.id);
+        const why = on ? flag.get(m.id) : suggest.get(m.id);
+        const cls = why ? (on ? " flag" : " sug") : "";
+        return `<button type="button" class="card${cls}" data-id="${m.id}" aria-pressed="${on}" aria-label="${esc(m.title)}" title="${esc(plain(fill(wording(m).text, t)))}">
+          ${why ? `<span class="why">${on ? "" : "Suggested · "}${esc(why)}</span>` : ""}
+          <span class="row"><span class="ic" aria-hidden="true"></span><span>${esc(m.title)}</span><span class="add" aria-hidden="true">Add</span></span>
+          ${on ? `<span class="d">${fill(wording(m).text, t, true)}</span>` : ""}
+        </button>`;}).join("")}</div></section>`;
+  }).join("");
+}
+
+function renderTray(){
+  const mods = ordered(), {fit} = analyse();
+  $("#trayTheme").textContent = theme().name;
+  const before = mods.filter(m => m.order < DEFINE_AT), after = mods.filter(m => m.order >= DEFINE_AT);
+  const seq = mods.length
+    ? [...(theme().multi ? [isHack() ? "Choose a Track" : "Choose a Theme"] : []), "Explore the Basics", ...before.map(m => `<b>${esc(m.title)}</b>`),
+       ...(after.length || isHack() ? [isHack() ? "Shape the Concept" : esc(DEFINE_STEP[aud().group].title)] : []), ...after.map(m => `<b>${esc(m.title)}</b>`),
+       ...(isHack() ? ["Test the Experience"] : [])]
+    : null;
+  $("#picked").innerHTML = seq ? seq.join('<span class="ar">→</span>') : "Pick modules to build the programme";
+  const f = $("#fit");
+  f.hidden = !fit;
+  if (fit){ f.className = "fit " + fit.cls; f.textContent = fit.text; f.title = fit.tip; }
+  $("#viewBtn").disabled = !mods.length;
+}
+
+function render(){ syncSetup(); renderThemes(); renderGrid(); renderTray(); }
+
+/* ---------- overview ---------- */
+/* Phase headers follow the brand's spectrum of ocean depth, light to deep. */
+const DEPTH = [["#46B7D3","#041738"],["#0072CE","#FFFFFF"],["#004EA8","#FFFFFF"],["#002F6C","#FFFFFF"],["#041738","#FFFFFF"]];
+const depth = (i, n) => DEPTH[n <= 1 ? 0 : Math.round(i * (DEPTH.length - 1) / (n - 1))];
+function renderDoc(){
+  const t = theme(), mods = ordered(), a = aud(), d = dur();
+  const org = state.org.trim();
+  const learners = parseInt(state.learners, 10);
+  const who = (learners > 0 ? learners + " " : "") + a.label;
+  let parts = [...new Set(mods.map(m => wording(m).make).filter(Boolean))];
+  if (parts.length > 1) parts = parts.filter(x => x !== "a picture of a possible future");
+  const hack = isHack();
+  const work = hack ? "a digital immersive experience" + (parts.length ? ` (${listJoin(parts)})` : "")
+                    : parts.length ? listJoin(parts) : "an explainer of their own";
+
+  /* Sponsor view: the journey grouped into a few plain phases. */
+  const inPhase = ph => mods.filter(x => ph.includes(x.phase));
+  const invest = inPhase(["Investigate"]), imagine = inPhase(["Imagine"]), making = inPhase(["Make","Tell"]);
+  const hasFut = imagine.some(x => x.title === "Build Blue Futures"), hasIdea = imagine.some(x => x.title === "Ideation Techniques");
+  const shapeBits = [hack ? "Decide what their audience should take away" : "Frame a clear challenge"];
+  if (hasFut) shapeBits.push("imagine possible futures");
+  if (hasIdea) shapeBits.push("generate ideas");
+  const phases = [
+    {key:"Explore", line: t.multi ? `Choose a ${t.word} and learn the science behind it through the Ocean Literacy Principles.` : `Learn the basics of ${t.topic} through the Ocean Literacy Principles.`,
+      tags: t.list.map(x => x.name)},
+    ...(invest.length ? [{key:"Investigate",
+      line: invest.some(x => x.title.startsWith("Sensors")) ? "Collect their own readings and turn real data into evidence." : "Turn real data into evidence.",
+      tags: invest.map(x => x.title)}] : []),
+    {key:"Shape", line: uc(listJoin(shapeBits)) + ".", tags: [...(hack ? ["Concept Development Canvas"] : []), ...imagine.map(x => x.title)]},
+    ...(making.length || hack ? [{key:"Make", line: `Build ${hack ? "a digital immersive experience" : listJoin(parts) || "their own explainer"}.`, tags: making.map(x => x.title)}] : []),
+    {key: hack ? "Test & Share" : "Share", line: hack ? "Test it with people outside the team, then present it." : `Present what they made to people new to ${t.topic}.`, tags: [], share:true}
+  ];
+  const tracks = t.multi ? ` across ${t.list.length} ${t.word}s` : `, exploring <b>${esc(t.topics)}</b>`;
+
+  const T = {...t, topic:t.topics, Who: uc(who), work, Learners: uc(a.label)};
+  const stages = PIPELINE[a.group].slice(1).map(([s,x]) => [s, fill(x, T)]);
+  const close = fill(CLOSE_BY_AUDIENCE[a.group] || CLOSE_DEFAULT, T);
+
+  $("#doc").innerHTML = `
+    <section class="slide">
+      <div class="kicker">${hack ? "Hackathon" : "Programme overview"}${org ? " · In collaboration with " + esc(org) : ""}</div>
+      <h1 class="headline" id="docTitle" contenteditable="true" spellcheck="false" title="Click to rename">${esc(state.title ?? t.title)}</h1>
+      <p class="meta">A <b>${d.label}</b> ${hack ? "hackathon" : "programme"} for <b>${esc(who)}</b>${tracks}.</p>
+      <div class="timeline phases" style="grid-template-columns:repeat(${phases.length},minmax(0,1fr))">
+        ${phases.map((ph,i) => { const [bg, fg] = depth(i, phases.length); return `<div class="tcard${ph.share ? " share" : ""}${i === phases.length - 1 ? " eol" : ""}" style="--pc:${bg};--pi:${fg}">
+          <header class="ph-h"><span class="num">${String(i + 1).padStart(2, "0")}</span><h3>${esc(ph.key)}</h3></header>
+          <p><span class="edit" contenteditable="true" spellcheck="false" data-step="phase:${esc(ph.key)}" title="Click to edit">${esc(state.edits["phase:" + ph.key] ?? ph.line)}</span></p>
+          ${ph.tags.length ? `<div class="tags">${ph.tags.map(x => typeof x === "string" ? `<span>${esc(x)}</span>` : `<a href="${esc(x.href)}" target="_blank" rel="noopener">${esc(x.text)}</a>`).join("")}</div>` : ""}
+        </div>`; }).join("")}
+      </div>
+      <div class="olp-band">
+        <div class="olp-list">
+          <h3>The 7 Ocean Literacy Principles</h3>
+          <ol>${Object.entries(OLP).map(([n,name]) => `<li><b>${n}</b>${esc(name)}</li>`).join("")}</ol>
+        </div>
+        <div class="olp-how">
+          <h3>How the principles shape the learning</h3>
+          <div><b>Explore</b>Learners first write down what they already believe about the ocean, then test those beliefs against the principles and the evidence.</div>
+          <div><b>Shape</b>Teams choose the principle their audience most needs to grasp, and design how people will discover it for themselves.</div>
+          ${hack || parts.length ? `<div><b>Make</b>What they build has to show the principle at work, through something people can see, try or decide.</div>` : ""}
+          <div><b>${hack ? "Test & Share" : "Share"}</b>Teams watch whether people come away understanding it. Each learner then answers: what did I believe about the ocean before, and what do I think now?</div>
+        </div>
+      </div>
+    </section>
+    <section class="slide leads">
+      <div class="kicker">Why this matters now</div>
+      <h2 class="lead-h">${esc(t.future)}</h2>
+      <div class="forces">
+        <div class="fcard">
+          <h3>What's changing</h3>
+          ${t.multi ? `<ul>${t.list.map(x => `<li><b>${esc(x.name)}</b>${esc(x.now)}</li>`).join("")}</ul>` : `<p>${esc(t.now)}</p>`}
+          <p class="who-line"><b>For ${esc(a.label)}</b>${esc(fill(STRUGGLE[a.group], {label:a.label}))}</p>
+        </div>
+        <div class="farrow" aria-hidden="true">→</div>
+        <div class="fcard prog">
+          <span class="dotm"></span>
+          <h3>What this programme does</h3>
+          <p>${esc(close)}</p>
+        </div>
+        <div class="farrow" aria-hidden="true">←</div>
+        <div class="fcard">
+          <h3>What holds it back</h3>
+          <p>${esc(HOLDING_BACK[a.group])}</p>
+        </div>
+      </div>
+      <div class="kicker sub-k">Where this leads</div>
+      <div class="timeline stages">
+        ${stages.map(([s,x],i) => `<div class="tcard${i === stages.length - 1 ? " eol" : ""}">
+          <span class="dotm"></span><h3>${esc(s)}</h3><span class="bar-mark"></span><p>${esc(x)}</p></div>`).join("")}
+      </div>
+    </section>
+    <section class="slide qa-s">
+      <div class="kicker">Questions you might have</div>
+      <div class="qa">${QUESTIONS.map(([q,x]) => `<div><h3>${esc(q)}</h3><p>${esc(x)}</p></div>`).join("")}</div>
+    </section>
+    <footer class="foot">
+      <img src="assets/logos/OceanX-Education-Logo-Dark.png" alt="OceanX Education">
+      <p>Next step: we shape this outline together into a full plan, with timings, delivery partners and costs confirmed.</p>
+    </footer>`;
+
+  $("#docTitle").addEventListener("input", e => { state.title = e.target.textContent.trim() || null; });
+  document.querySelectorAll("#doc .edit").forEach(el => el.addEventListener("input", () => { state.edits[el.dataset.step] = el.textContent; }));
+  $("#docTitle").addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); e.target.blur(); } });
+}
+
+/* ---------- events ---------- */
+$("#themes").addEventListener("click", e => {
+  const b = e.target.closest(".pill"); if (!b) return;
+  const id = b.dataset.theme;
+  if (state.themes.has(id)){ if (state.themes.size === 1) return; state.themes.delete(id); }
+  else {
+    const wasHack = isHack();
+    state.themes.add(id);
+    if (!wasHack && isHack()){ state.duration = "three"; state.extended = false; }
+    else if (load() > dur().cap){ const fit = DURATIONS.find(x => x.cap >= load()); if (fit){ state.duration = fit.id; state.extended = true; } }
+  }
+  state.title = null; render();
+  document.querySelector(`.pill[data-theme="${id}"]`).focus({preventScroll:true});
+});
+$("#grid").addEventListener("click", e => {
+  const c = e.target.closest(".card"); if (!c) return;
+  const id = c.dataset.id, adding = !state.selected.has(id);
+  adding ? state.selected.add(id) : state.selected.delete(id);
+  if (adding && load() > dur().cap){
+    const fit = DURATIONS.find(x => x.cap >= load());
+    if (fit){ state.duration = fit.id; state.extended = true; }
+  }
+  render();
+  document.querySelector(`.card[data-id="${id}"]`).focus({preventScroll:true});
+});
+$("#duration").addEventListener("change", e => { state.duration = e.target.value; state.extended = false; render(); });
+$("#audience").addEventListener("change", e => { state.audience = e.target.value; render(); });
+$("#org").addEventListener("input", e => { state.org = e.target.value; syncSetup(); });
+$("#learners").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g,"").slice(0,5); state.learners = e.target.value; syncSetup(); });
+
+const open = () => { renderDoc(); document.body.classList.add("show"); $("#sheet").scrollTop = 0; };
+const close = () => { document.body.classList.remove("show"); $("#viewBtn").focus(); };
+$("#viewBtn").addEventListener("click", open);
+$("#backBtn").addEventListener("click", close);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && document.body.classList.contains("show")) close(); });
+$("#printBtn").addEventListener("click", () => window.print());
+$("#resetBtn").addEventListener("click", () => {
+  Object.assign(state, {org:"", duration:"day", audience:"high", learners:"", themes:new Set(["reefs"]), selected:new Set(), title:null, extended:false, edits:{}});
+  $("#learners").value = ""; $("#org").value = ""; render();
+});
+
+initSetup(); render();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncSetup);
+</script>
+</body>
+</html>
