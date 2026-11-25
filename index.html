@@ -154,7 +154,10 @@ body.show{overflow:hidden}
 .ph-h .num{font-weight:600;font-size:30px;line-height:1;letter-spacing:-.02em;opacity:.55;display:block}
 .ph-h h3{margin:0;font-size:18px;line-height:1;letter-spacing:.05em;color:var(--pi);padding-top:2px}
 .phases .tcard.share .ph-h .num{color:var(--orange);opacity:1}
-.phases{gap:16px}
+.phases{gap:16px;align-items:stretch}
+.phases .tcard{display:flex;flex-direction:column}
+.phases .tags{margin-top:auto!important;padding-top:16px}
+.phases .tags span{border-radius:8px;line-height:1.35}
 .phases .tcard:not(.eol)::after{right:-17px;width:16px}
 .ph-h{padding:0 16px;gap:10px}
 .ph-h .num{font-size:26px}
@@ -752,7 +755,7 @@ function renderDoc(){
   if (hasIdea) shapeBits.push("generate ideas");
   const phases = [
     {key:"Explore", line: t.multi ? `Choose a ${t.word} and learn the science behind it through the Ocean Literacy Principles.`
-        : `Learn the basics of ${t.topic}${focusOf(t.id).length ? ", focusing on " + focusList(focusOf(t.id).map(f => f.phrase)) + "," : ""} through the Ocean Literacy Principles.`,
+        : `Learn the basics of ${t.topic} through the Ocean Literacy Principles.`,
       tags: t.list.flatMap(x => { const f = focusOf(x.id); return f.length ? f.map(y => (t.multi ? x.name + ": " : "") + y.name) : [x.name]; })},
     ...(invest.length ? [{key:"Investigate",
       line: invest.some(x => x.title.startsWith("Sensors")) ? "Collect their own readings and turn real data into evidence." : "Turn real data into evidence.",
