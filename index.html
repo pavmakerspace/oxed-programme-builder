@@ -49,7 +49,7 @@ button,input,select{font:inherit;color:inherit}
 .link:hover{color:var(--ink)}
 
 /* ---------- builder ---------- */
-.page{max-width:1320px;margin:0 auto;padding:30px 48px 140px}
+.page{max-width:1320px;margin:0 auto;padding:30px 48px 64px}
 .top{display:flex;align-items:center;justify-content:space-between}
 .top img{height:34px;display:block}
 .intro-b{margin:34px 0 26px}
@@ -107,10 +107,12 @@ button,input,select{font:inherit;color:inherit}
 .card.flag{border-color:var(--orange)}
 .card.flag .why{color:var(--orange)}
 
-.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;z-index:10;box-shadow:0 -1px 0 #E2E5E1}
-.bar-in{max-width:1320px;margin:0 auto;padding:14px 48px;display:flex;align-items:center;gap:24px}
-.bar .tname{font-weight:600;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
-.bar .seq{flex:1;min-width:0;font-size:15.5px;color:var(--grey);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{margin-top:30px;background:#fff;border-radius:12px;padding:20px 24px}
+.bar-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.bar-in{display:flex;align-items:center;justify-content:space-between;gap:16px 28px;flex-wrap:wrap}
+.bar-in > div{flex:1;min-width:240px}
+.bar .tname{font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.bar .seq{margin-top:4px;font-size:15.5px;line-height:1.6;color:var(--grey)}
 .bar .seq b{font-weight:600;color:var(--ink)}
 .bar .seq .ar{color:var(--cyan);margin:0 8px;font-weight:600}
 .fit{flex:none;font-weight:600;font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--cyan);cursor:help}
@@ -195,9 +197,23 @@ body.show{overflow:hidden}
   .tcard::after{display:none}
 }
 @media screen and (max-width:640px){
-  .page,.bar-in,.sheet-bar,.slide,.foot{padding-left:16px;padding-right:16px}
+  .page,.sheet-bar,.slide,.foot{padding-left:16px;padding-right:16px}
+  .page{padding-top:20px}
+  .top img{height:28px}
+  .headline{font-size:32px}
+  .setup{font-size:20px}
+  .bar{padding:18px}
+  .bar-in .btn{width:100%}
+  .olp-list ol{grid-template-columns:1fr}
+  .olp-band,.fcard{padding:20px}
+  .fcard.prog{padding:28px 22px}
+  .fcard.prog p{font-size:19px}
+  .ph-h{height:56px}
+  .sheet-bar{padding-top:14px}
+  .sheet-bar .btn{padding:10px 16px}
+  .lead-h{font-size:24px}
+  .stages .tcard{text-align:left}
   .grid,.stages,.steps,.phases,.forces,.qa{grid-template-columns:1fr!important}
-  .bar .seq{display:none}
   .foot{flex-direction:column;align-items:flex-start;gap:12px}.foot p{text-align:left}
 }
 @media print{
@@ -251,17 +267,17 @@ body.show{overflow:hidden}
   </div>
 
   <div class="timeline grid" id="grid" style="margin-top:12px"></div>
+  <section class="bar" aria-label="Your programme">
+    <div class="bar-top"><span class="kicker">Your programme</span><span class="fit" id="fit" role="status" hidden></span></div>
+    <div class="bar-in">
+      <div><div class="tname" id="trayTheme"></div><div class="seq" id="picked"></div></div>
+      <button class="btn btn-ink" id="viewBtn" type="button" disabled>View overview →</button>
+    </div>
+  </section>
+
 </main>
 </div>
 
-<div class="bar" role="region" aria-label="Your programme">
-  <div class="bar-in">
-    <span class="tname" id="trayTheme"></span>
-    <div class="seq" id="picked"></div>
-    <span class="fit" id="fit" role="status" hidden></span>
-    <button class="btn btn-ink" id="viewBtn" type="button" disabled>View overview →</button>
-  </div>
-</div>
 
 <section class="sheet topo" id="sheet" aria-label="Programme overview">
   <div class="sheet-bar">
