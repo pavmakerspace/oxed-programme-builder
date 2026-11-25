@@ -190,6 +190,28 @@ body.show{overflow:hidden}
 .foot img{height:34px;display:block}
 .foot p{margin:0;font-size:14.5px;color:var(--grey);max-width:60ch;text-align:right}
 
+/* deck */
+.sheet-bar{gap:20px}
+.deck-tabs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.deck-tabs button{border:0;background:transparent;border-radius:999px;padding:9px 16px;font-weight:600;font-size:13.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--grey);cursor:pointer}
+.deck-tabs button:hover{color:var(--ink);background:#fff}
+.deck-tabs button[aria-current="step"]{background:var(--ink);color:#fff}
+#doc .slide{display:none;min-height:calc(100vh - 190px);padding-top:30px}
+#doc .slide.active{display:block;animation:slideIn .35s ease both}
+#doc .slide.instant{animation:none}
+@keyframes slideIn{from{opacity:0;transform:translateX(calc(var(--dir,1) * 28px))}to{opacity:1;transform:none}}
+.deck-nav{max-width:1320px;margin:0 auto;padding:6px 48px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.deck-nav .btn:disabled{opacity:.35;cursor:default}
+.deck-count{font-weight:600;letter-spacing:.06em;color:var(--grey)}
+.slide .lead-h{margin-bottom:6px}
+.slide .stages{margin-top:28px}
+.slide .olp-band{margin-top:28px}
+.stages{grid-template-columns:repeat(3,minmax(0,1fr))}
+.stages .tcard{padding:0 0 22px;text-align:left}
+.stages .tcard::after{top:31px}
+.stages .tcard p{margin:16px 20px 0}
+.slide .foot{padding:28px 0 0;margin-top:28px;max-width:none}
+@media (prefers-reduced-motion: reduce){#doc .slide.active{animation:none}}
 @media screen and (max-width:1000px){
   .grid,.stages{grid-template-columns:repeat(2,minmax(0,1fr))}
   .forces{grid-template-columns:1fr}.farrow{transform:rotate(90deg);height:36px}
@@ -213,6 +235,11 @@ body.show{overflow:hidden}
   .ph-h{height:56px}
   .sheet-bar{padding-top:14px}
   .sheet-bar .btn{padding:10px 16px}
+  .sheet-bar{flex-wrap:wrap}
+  .deck-tabs{order:3;width:100%;justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap}
+  .deck-tabs button{white-space:nowrap;padding:8px 12px;font-size:12.5px}
+  .deck-nav{padding:6px 16px 24px}
+  #doc .slide{min-height:0}
   .lead-h{font-size:24px}
   .stages .tcard{text-align:left}
   .grid,.stages,.steps,.phases,.forces,.qa{grid-template-columns:1fr!important}
@@ -222,14 +249,15 @@ body.show{overflow:hidden}
   @page{size:A4 landscape;margin:0}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   html,body,body.show{background:var(--sand);overflow:visible!important;height:auto!important;min-height:0}
-  .topo:not(.sheet),.bar,.sheet-bar{display:none!important}
+  .topo:not(.sheet),.bar,.sheet-bar,.deck-nav{display:none!important}
+  #doc .slide{display:block!important;min-height:0;animation:none!important}
+  #doc .slide + .slide{break-before:page;padding-top:16mm}
   .topo::before{display:none}
   .sheet{position:static!important;inset:auto;opacity:1!important;visibility:visible!important;overflow:visible!important;transition:none;background:transparent;zoom:.72;padding:16mm 16mm 0}
   .slide,.foot{max-width:none;padding:0 4px 14px}
   .slide + .slide{padding-top:0}
   .headline{font-size:44px}
   .tcard{break-inside:avoid}
-  .slide.leads{break-before:page;padding-top:16mm}
   .qa-s{break-inside:avoid}
   .edit:hover{background:none}
   .foot{break-inside:avoid;padding-top:6px}
@@ -284,9 +312,15 @@ body.show{overflow:hidden}
 <section class="sheet topo" id="sheet" aria-label="Programme overview">
   <div class="sheet-bar">
     <button class="link" id="backBtn" type="button">← Back to builder</button>
+    <nav class="deck-tabs" id="deckTabs" aria-label="Overview slides"></nav>
     <button class="btn btn-line" id="printBtn" type="button">Save as PDF</button>
   </div>
-  <article id="doc"></article>
+  <article id="doc" aria-live="polite"></article>
+  <div class="deck-nav">
+    <button class="btn btn-line" id="prevBtn" type="button">← Previous</button>
+    <span class="deck-count" id="deckCount"></span>
+    <button class="btn btn-ink" id="nextBtn" type="button">Next →</button>
+  </div>
 </section>
 
 <script>
@@ -673,8 +707,10 @@ function renderDoc(){
   const stages = PIPELINE[a.group].slice(1).map(([s,x]) => [s, fill(x, T)]);
   const close = fill(CLOSE_BY_AUDIENCE[a.group] || CLOSE_DEFAULT, T);
 
+  const progName = esc(state.title ?? t.title);
+  const run = name => `<div class="kicker">${progName} · ${name}</div>`;
   $("#doc").innerHTML = `
-    <section class="slide">
+    <section class="slide" data-name="The journey">
       <div class="kicker">${hack ? "Hackathon" : "Programme overview"}${org ? " · In collaboration with " + esc(org) : ""}</div>
       <h1 class="headline" id="docTitle" contenteditable="true" spellcheck="false" title="Click to rename">${esc(state.title ?? t.title)}</h1>
       <p class="meta">A <b>${d.label}</b> ${hack ? "hackathon" : "programme"} for <b>${esc(who)}</b>${tracks}.</p>
@@ -685,6 +721,10 @@ function renderDoc(){
           ${ph.tags.length ? `<div class="tags">${ph.tags.map(x => typeof x === "string" ? `<span>${esc(x)}</span>` : `<a href="${esc(x.href)}" target="_blank" rel="noopener">${esc(x.text)}</a>`).join("")}</div>` : ""}
         </div>`; }).join("")}
       </div>
+    </section>
+    <section class="slide" data-name="Ocean Literacy">
+      ${run("Ocean Literacy")}
+      <h2 class="lead-h">Built on the 7 Ocean Literacy Principles.</h2>
       <div class="olp-band">
         <div class="olp-list">
           <h3>The 7 Ocean Literacy Principles</h3>
@@ -699,8 +739,8 @@ function renderDoc(){
         </div>
       </div>
     </section>
-    <section class="slide leads">
-      <div class="kicker">Why this matters now</div>
+    <section class="slide" data-name="Why it matters">
+      ${run("Why this matters now")}
       <h2 class="lead-h">${esc(t.future)}</h2>
       <div class="forces">
         <div class="fcard">
@@ -710,7 +750,6 @@ function renderDoc(){
         </div>
         <div class="farrow" aria-hidden="true">→</div>
         <div class="fcard prog">
-          <span class="dotm"></span>
           <h3>What this programme does</h3>
           <p>${esc(close)}</p>
         </div>
@@ -720,20 +759,22 @@ function renderDoc(){
           <p>${esc(HOLDING_BACK[a.group])}</p>
         </div>
       </div>
-      <div class="kicker sub-k">Where this leads</div>
+    </section>
+    <section class="slide" data-name="Where it leads">
+      ${run("Where this leads")}
+      <h2 class="lead-h">From this programme to ocean careers and changemakers.</h2>
       <div class="timeline stages">
-        ${stages.map(([s,x],i) => `<div class="tcard${i === stages.length - 1 ? " eol" : ""}">
-          <span class="dotm"></span><h3>${esc(s)}</h3><span class="bar-mark"></span><p>${esc(x)}</p></div>`).join("")}
+        ${stages.map(([s,x],i) => { const [bg, fg] = depth(i + 2, stages.length + 2); return `<div class="tcard${i === stages.length - 1 ? " eol" : ""}" style="--pc:${bg};--pi:${fg}">
+          <header class="ph-h"><h3>${esc(s)}</h3></header><p>${esc(x)}</p></div>`; }).join("")}
       </div>
-    </section>
-    <section class="slide qa-s">
-      <div class="kicker">Questions you might have</div>
+      <div class="kicker sub-k">Questions you might have</div>
       <div class="qa">${QUESTIONS.map(([q,x]) => `<div><h3>${esc(q)}</h3><p>${esc(x)}</p></div>`).join("")}</div>
-    </section>
-    <footer class="foot">
-      <img src="assets/logos/OceanX-Education-Logo-Dark.png" alt="OceanX Education">
-      <p>Next step: we shape this outline together into a full plan, with timings, delivery partners and costs confirmed.</p>
-    </footer>`;
+      <footer class="foot">
+        <img src="assets/logos/OceanX-Education-Logo-Dark.png" alt="OceanX Education">
+        <p>Next step: we shape this outline together into a full plan, with timings, delivery partners and costs confirmed.</p>
+      </footer>
+    </section>`;
+  buildDeck();
 
   $("#docTitle").addEventListener("input", e => { state.title = e.target.textContent.trim() || null; document.title = (state.title ?? theme().title) + " | OceanX Education"; });
   document.querySelectorAll("#doc .edit").forEach(el => el.addEventListener("input", () => { state.edits[el.dataset.step] = el.textContent; }));
@@ -770,7 +811,41 @@ $("#audience").addEventListener("change", e => { state.audience = e.target.value
 $("#org").addEventListener("input", e => { state.org = e.target.value; syncSetup(); });
 $("#learners").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g,"").slice(0,5); state.learners = e.target.value; syncSetup(); });
 
-const open = () => { renderDoc(); document.title = (state.title ?? theme().title) + " | OceanX Education"; document.body.classList.add("show"); $("#sheet").scrollTop = 0; };
+/* ---------- overview as a slide deck ---------- */
+function buildDeck(){
+  const slides = [...document.querySelectorAll("#doc .slide")];
+  $("#deckTabs").innerHTML = slides.map((sl,i) => `<button type="button" data-go="${i}">${String(i + 1).padStart(2,"0")} ${esc(sl.dataset.name)}</button>`).join("");
+  goTo(Math.min(state.slide || 0, slides.length - 1), true);
+}
+function goTo(i, instant){
+  const slides = [...document.querySelectorAll("#doc .slide")];
+  if (i < 0 || i >= slides.length) return;
+  const dir = i >= (state.slide || 0) ? 1 : -1;
+  state.slide = i;
+  slides.forEach((sl,k) => { sl.classList.toggle("active", k === i); sl.style.setProperty("--dir", dir); if (instant) sl.classList.add("instant"); else sl.classList.remove("instant"); });
+  document.querySelectorAll("#deckTabs button").forEach((b,k) => b.setAttribute("aria-current", k === i ? "step" : "false"));
+  $("#deckCount").textContent = `${i + 1} / ${slides.length}`;
+  $("#prevBtn").disabled = i === 0;
+  $("#nextBtn").disabled = i === slides.length - 1;
+  $("#sheet").scrollTop = 0;
+}
+$("#deckTabs").addEventListener("click", e => { const b = e.target.closest("[data-go]"); if (b) goTo(+b.dataset.go); });
+$("#prevBtn").addEventListener("click", () => goTo(state.slide - 1));
+$("#nextBtn").addEventListener("click", () => goTo(state.slide + 1));
+document.addEventListener("keydown", e => {
+  if (!document.body.classList.contains("show") || e.target.isContentEditable || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+  if (e.key === "ArrowRight") goTo(state.slide + 1);
+  if (e.key === "ArrowLeft") goTo(state.slide - 1);
+});
+let touchX = null;
+$("#doc").addEventListener("touchstart", e => { touchX = e.touches[0].clientX; }, {passive:true});
+$("#doc").addEventListener("touchend", e => {
+  if (touchX === null) return;
+  const dx = e.changedTouches[0].clientX - touchX; touchX = null;
+  if (Math.abs(dx) > 60) goTo(state.slide + (dx < 0 ? 1 : -1));
+});
+
+const open = () => { state.slide = 0; renderDoc(); document.title = (state.title ?? theme().title) + " | OceanX Education"; document.body.classList.add("show"); $("#sheet").scrollTop = 0; };
 const close = () => { document.body.classList.remove("show"); document.title = "Programme Builder | OceanX Education"; $("#viewBtn").focus(); };
 $("#viewBtn").addEventListener("click", open);
 $("#backBtn").addEventListener("click", close);
