@@ -154,6 +154,11 @@ body.show{overflow:hidden}
 .ph-h .num{font-weight:600;font-size:30px;line-height:1;letter-spacing:-.02em;opacity:.55;display:block}
 .ph-h h3{margin:0;font-size:18px;line-height:1;letter-spacing:.05em;color:var(--pi);padding-top:2px}
 .phases .tcard.share .ph-h .num{color:var(--orange);opacity:1}
+.phases{gap:16px}
+.phases .tcard:not(.eol)::after{right:-17px;width:16px}
+.ph-h{padding:0 16px;gap:10px}
+.ph-h .num{font-size:26px}
+.ph-h h3{font-size:16px;letter-spacing:.04em}
 .phases p{margin:16px 20px 0;font-size:17px;line-height:1.45;color:var(--ink)}
 .phases .tags{justify-content:flex-start;margin:14px 20px 0}
 .tags{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:16px}
@@ -201,10 +206,23 @@ body.show{overflow:hidden}
 .deck-tabs button{border:0;background:transparent;border-radius:999px;padding:9px 16px;font-weight:600;font-size:13.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--grey);cursor:pointer}
 .deck-tabs button:hover{color:var(--ink);background:#fff}
 .deck-tabs button[aria-current="step"]{background:var(--ink);color:#fff}
-#doc .slide{display:none;min-height:calc(100vh - 100px);padding-top:20px;padding-bottom:60px;flex-direction:column;justify-content:center}
-#doc .slide.active{display:flex;animation:slideIn .35s ease both}
-#doc .slide.instant{animation:none}
-@keyframes slideIn{from{opacity:0;transform:translateX(calc(var(--dir,1) * 28px))}to{opacity:1;transform:none}}
+/* peek carousel: the current slide in the centre, its neighbours faintly at each side */
+.deck-view{position:relative;overflow:hidden;padding:18px 0 28px}
+#doc{--w:min(1180px, calc(100vw - 320px));--g:24px;display:flex;align-items:stretch;gap:var(--g);
+  transform:translateX(calc((100vw - var(--w)) / 2 - var(--i,0) * (var(--w) + var(--g))));transition:transform .55s cubic-bezier(.22,.7,.2,1)}
+#doc.instant,#doc.instant .slide{transition:none}
+#doc .slide{flex:none;width:var(--w);max-width:none;margin:0;box-sizing:border-box;min-height:calc(100vh - 150px);padding:40px 48px 44px;
+  display:flex;flex-direction:column;justify-content:center;background:#F7F8F6;border:1px solid rgba(4,23,56,.07);border-radius:22px;
+  box-shadow:0 18px 50px rgba(4,23,56,.08);opacity:.32;transform:scale(.9);transition:opacity .55s,transform .55s;cursor:pointer}
+#doc .slide.active{opacity:1;transform:none;cursor:auto}
+#doc .slide:not(.active) > *{pointer-events:none}
+.deck-arrow{position:absolute;top:50%;z-index:2;width:48px;height:48px;margin-top:-24px;border-radius:50%;border:1px solid rgba(4,23,56,.12);
+  background:rgba(255,255,255,.75);color:var(--ink);font-size:22px;line-height:1;cursor:pointer;display:grid;place-items:center;opacity:.7;transition:opacity .2s,background .2s}
+.deck-arrow:hover{opacity:1;background:#fff}
+.deck-arrow:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.deck-arrow.prev{left:calc((100vw - min(1180px, calc(100vw - 320px))) / 2 - 24px - 50px)}
+.deck-arrow.next{right:calc((100vw - min(1180px, calc(100vw - 320px))) / 2 - 24px - 50px)}
+.deck-arrow[hidden]{display:none}
 .slide .lead-h{margin-bottom:6px}
 .slide .stages{margin-top:28px}
 .slide .olp-band{margin-top:28px}
@@ -213,7 +231,7 @@ body.show{overflow:hidden}
 .stages .tcard::after{top:31px}
 .stages .tcard p{margin:16px 20px 0}
 .slide .foot{padding:28px 0 0;margin-top:28px;max-width:none;width:100%;box-sizing:border-box}
-@media (prefers-reduced-motion: reduce){#doc .slide.active{animation:none}}
+@media (prefers-reduced-motion: reduce){#doc,#doc .slide{transition:none}}
 @media screen and (max-width:1000px){
   .grid,.stages{grid-template-columns:repeat(2,minmax(0,1fr))}
   .grid > .cat{grid-column:auto}
@@ -241,7 +259,9 @@ body.show{overflow:hidden}
   .sheet-bar{flex-wrap:wrap}
   .deck-tabs{order:3;width:100%;justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap}
   .deck-tabs button{white-space:nowrap;padding:8px 12px;font-size:12.5px}
-  #doc .slide{min-height:0}
+  #doc{--w:calc(100vw - 32px);--g:12px;align-items:flex-start}
+  #doc .slide{min-height:0;padding:24px 18px 28px;transform:none;justify-content:flex-start}
+  .deck-arrow{display:none}
   .lead-h{font-size:24px}
   .stages .tcard{text-align:left}
   .grid,.stages,.steps,.phases,.forces,.qa{grid-template-columns:1fr!important}
@@ -252,7 +272,9 @@ body.show{overflow:hidden}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   html,body,body.show{background:var(--sand);overflow:visible!important;height:auto!important;min-height:0}
   .topo:not(.sheet),.bar,.sheet-bar,.deck-nav{display:none!important}
-  #doc .slide{display:block!important;min-height:0;animation:none!important}
+  .deck-view{overflow:visible;padding:0}.deck-arrow{display:none!important}
+  #doc{display:block;transform:none!important}
+  #doc .slide{display:block!important;min-height:0;width:auto;opacity:1!important;transform:none!important;background:none;border:0;box-shadow:none;border-radius:0}
   #doc .slide + .slide{break-before:page;padding-top:16mm}
   .topo::before{display:none}
   .sheet{position:static!important;inset:auto;opacity:1!important;visibility:visible!important;overflow:visible!important;transition:none;background:transparent;zoom:.72;padding:16mm 16mm 0}
@@ -317,7 +339,11 @@ body.show{overflow:hidden}
     <nav class="deck-tabs" id="deckTabs" aria-label="Overview slides"></nav>
     <button class="btn btn-line" id="printBtn" type="button">Save as PDF</button>
   </div>
-  <article id="doc" aria-live="polite"></article>
+  <div class="deck-view">
+    <button class="deck-arrow prev" id="prevBtn" type="button" aria-label="Previous slide">←</button>
+    <article id="doc" aria-live="polite"></article>
+    <button class="deck-arrow next" id="nextBtn" type="button" aria-label="Next slide">→</button>
+  </div>
 </section>
 
 <script>
@@ -861,12 +887,20 @@ function buildDeck(){
 function goTo(i, instant){
   const slides = [...document.querySelectorAll("#doc .slide")];
   if (i < 0 || i >= slides.length) return;
-  const dir = i >= (state.slide || 0) ? 1 : -1;
   state.slide = i;
-  slides.forEach((sl,k) => { sl.classList.toggle("active", k === i); sl.style.setProperty("--dir", dir); if (instant) sl.classList.add("instant"); else sl.classList.remove("instant"); });
+  const doc = $("#doc");
+  doc.classList.toggle("instant", !!instant);
+  doc.style.setProperty("--i", i);
+  slides.forEach((sl,k) => { sl.classList.toggle("active", k === i); sl.setAttribute("aria-hidden", k === i ? "false" : "true"); });
+  $("#prevBtn").hidden = i === 0;
+  $("#nextBtn").hidden = i === slides.length - 1;
+  if (instant) requestAnimationFrame(() => requestAnimationFrame(() => doc.classList.remove("instant")));
   document.querySelectorAll("#deckTabs button").forEach((b,k) => b.setAttribute("aria-current", k === i ? "step" : "false"));
   $("#sheet").scrollTop = 0;
 }
+$("#prevBtn").addEventListener("click", () => goTo(state.slide - 1));
+$("#nextBtn").addEventListener("click", () => goTo(state.slide + 1));
+$("#doc").addEventListener("click", e => { const sl = e.target.closest(".slide"); if (sl && !sl.classList.contains("active")) goTo([...document.querySelectorAll("#doc .slide")].indexOf(sl)); });
 $("#deckTabs").addEventListener("click", e => { const b = e.target.closest("[data-go]"); if (b) goTo(+b.dataset.go); });
 document.addEventListener("keydown", e => {
   if (!document.body.classList.contains("show") || e.target.isContentEditable || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
