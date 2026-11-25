@@ -201,13 +201,10 @@ body.show{overflow:hidden}
 .deck-tabs button{border:0;background:transparent;border-radius:999px;padding:9px 16px;font-weight:600;font-size:13.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--grey);cursor:pointer}
 .deck-tabs button:hover{color:var(--ink);background:#fff}
 .deck-tabs button[aria-current="step"]{background:var(--ink);color:#fff}
-#doc .slide{display:none;min-height:calc(100vh - 190px);padding-top:30px}
-#doc .slide.active{display:block;animation:slideIn .35s ease both}
+#doc .slide{display:none;min-height:calc(100vh - 100px);padding-top:20px;padding-bottom:60px;flex-direction:column;justify-content:center}
+#doc .slide.active{display:flex;animation:slideIn .35s ease both}
 #doc .slide.instant{animation:none}
 @keyframes slideIn{from{opacity:0;transform:translateX(calc(var(--dir,1) * 28px))}to{opacity:1;transform:none}}
-.deck-nav{max-width:1320px;margin:0 auto;padding:6px 48px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.deck-nav .btn:disabled{opacity:.35;cursor:default}
-.deck-count{font-weight:600;letter-spacing:.06em;color:var(--grey)}
 .slide .lead-h{margin-bottom:6px}
 .slide .stages{margin-top:28px}
 .slide .olp-band{margin-top:28px}
@@ -215,7 +212,7 @@ body.show{overflow:hidden}
 .stages .tcard{padding:0 0 22px;text-align:left}
 .stages .tcard::after{top:31px}
 .stages .tcard p{margin:16px 20px 0}
-.slide .foot{padding:28px 0 0;margin-top:28px;max-width:none}
+.slide .foot{padding:28px 0 0;margin-top:28px;max-width:none;width:100%;box-sizing:border-box}
 @media (prefers-reduced-motion: reduce){#doc .slide.active{animation:none}}
 @media screen and (max-width:1000px){
   .grid,.stages{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -244,7 +241,6 @@ body.show{overflow:hidden}
   .sheet-bar{flex-wrap:wrap}
   .deck-tabs{order:3;width:100%;justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap}
   .deck-tabs button{white-space:nowrap;padding:8px 12px;font-size:12.5px}
-  .deck-nav{padding:6px 16px 24px}
   #doc .slide{min-height:0}
   .lead-h{font-size:24px}
   .stages .tcard{text-align:left}
@@ -322,11 +318,6 @@ body.show{overflow:hidden}
     <button class="btn btn-line" id="printBtn" type="button">Save as PDF</button>
   </div>
   <article id="doc" aria-live="polite"></article>
-  <div class="deck-nav">
-    <button class="btn btn-line" id="prevBtn" type="button">← Previous</button>
-    <span class="deck-count" id="deckCount"></span>
-    <button class="btn btn-ink" id="nextBtn" type="button">Next →</button>
-  </div>
 </section>
 
 <script>
@@ -874,14 +865,9 @@ function goTo(i, instant){
   state.slide = i;
   slides.forEach((sl,k) => { sl.classList.toggle("active", k === i); sl.style.setProperty("--dir", dir); if (instant) sl.classList.add("instant"); else sl.classList.remove("instant"); });
   document.querySelectorAll("#deckTabs button").forEach((b,k) => b.setAttribute("aria-current", k === i ? "step" : "false"));
-  $("#deckCount").textContent = `${i + 1} / ${slides.length}`;
-  $("#prevBtn").disabled = i === 0;
-  $("#nextBtn").disabled = i === slides.length - 1;
   $("#sheet").scrollTop = 0;
 }
 $("#deckTabs").addEventListener("click", e => { const b = e.target.closest("[data-go]"); if (b) goTo(+b.dataset.go); });
-$("#prevBtn").addEventListener("click", () => goTo(state.slide - 1));
-$("#nextBtn").addEventListener("click", () => goTo(state.slide + 1));
 document.addEventListener("keydown", e => {
   if (!document.body.classList.contains("show") || e.target.isContentEditable || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
   if (e.key === "ArrowRight") goTo(state.slide + 1);
