@@ -690,7 +690,7 @@ function renderGrid(){
     const n = fs.filter(f => state.focus.has(f.key)).length;
     return `<section class="tcard cat sci${shownSci.has(th.id) ? "" : " new"}" style="--cc:${SCIENCE.color};--ci:${SCIENCE.ink};--ct:${SCIENCE.tint};--span:${nt >= 3 ? cols / nt : 1}">
       <header class="cat-h"><small>Science</small><h3>${esc(th.name)}</h3><p>Pick a focus, or leave it broad</p>${n ? `<span class="count">${n}</span>` : ""}</header>
-      <div class="mods">${fs.map(f => { const on = state.focus.has(f.key), why = on && n > 2 ? `${n} focus areas: keep 1 or 2` : "";
+      <div class="mods">${fs.map(f => { const on = state.focus.has(f.key), why = on && n > 3 ? `${n} focus areas: keep up to 3` : "";
         return `<button type="button" class="card${why ? " flag" : ""}" data-focus="${f.key}" aria-pressed="${on}" aria-label="${esc(f.name)}">
           ${why ? `<span class="why">${esc(why)}</span>` : ""}
           <span class="row"><span class="ic" aria-hidden="true"></span><span>${esc(f.name)}</span></span></button>`; }).join("")}</div></section>`;
