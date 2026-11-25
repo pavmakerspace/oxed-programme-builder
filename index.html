@@ -72,7 +72,12 @@ button,input,select{font:inherit;color:inherit}
 .pill[aria-checked="true"]::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--cyan)}
 
 .timeline{display:grid;gap:22px;align-items:start}
-.grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.grid{grid-template-columns:repeat(var(--cols,4),minmax(0,1fr))}
+.grid > .cat{grid-column:span var(--span,1)}
+.grid .cat.sci .cat-h small{display:block;margin-bottom:4px;font-weight:600;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan)}
+.grid .cat.sci.new{animation:colIn .3s ease both}
+@keyframes colIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.grid .cat.sci.new{animation:none}}
 .tcard{position:relative;background:var(--card);border-radius:12px;padding:24px 18px 22px;text-align:center}
 .tcard:not(.eol)::after{content:"";position:absolute;top:32px;right:-21px;width:20px;border-top:3px dotted var(--cyan)}
 .tcard h3{margin:0;font-weight:600;font-size:16px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink)}
@@ -214,6 +219,7 @@ body.show{overflow:hidden}
 @media (prefers-reduced-motion: reduce){#doc .slide.active{animation:none}}
 @media screen and (max-width:1000px){
   .grid,.stages{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid > .cat{grid-column:auto}
   .forces{grid-template-columns:1fr}.farrow{transform:rotate(90deg);height:36px}
   .olp-band{grid-template-columns:1fr}
   .qa{grid-template-columns:1fr}
@@ -364,6 +370,21 @@ const THEMES = [
     measure:"temperature", story:"life surviving at the ocean's extremes",
     challenge:"exploring places people cannot easily reach", people:"the explorers, scientists and communities shaped by extreme ocean places" }
 ];
+
+/* Science focus areas inside each theme. Picking a theme adds its column to the builder.
+   name = card label, phrase = how it reads in a sentence. Draft list: check with the science team. */
+const FOCUS = {
+  reefs:[["Bleaching & Ocean Warming","bleaching and ocean warming"],["Coral Biology & Symbiosis","coral biology and symbiosis"],
+         ["Ocean Acidification","ocean acidification"],["Reef Biodiversity","reef biodiversity"],["Reef Restoration","reef restoration"]],
+  light:[["Biotech & Medicine","light in biotech and medicine"],["Communication & Signalling","communication and signalling"],
+         ["Deep-Sea Survival","survival in the deep sea"],["How Light Is Made","how living things make light"],["Light & New Species","light and new species"]],
+  microbes:[["Carbon & Climate","carbon and climate"],["Microbes in Extreme Places","microbes in extreme places"],
+         ["Microplastics & Microbes","microplastics and microbes"],["Ocean Oxygen","where ocean oxygen comes from"],["Plankton & the Food Web","plankton and the food web"]],
+  extreme:[["Deep-Sea Mining","deep-sea mining"],["Deep-Sea Vents","deep-sea vents"],["Exploring the Unknown","exploring the unknown ocean"],
+         ["Life Under Pressure","life under pressure"],["The Polar Seas","the polar seas"]]
+};
+const SCIENCE = {color:"#041738", ink:"#FFFFFF", tint:"#E9EDF3"};
+const focusOf = id => (FOCUS[id] || []).map(([name, phrase], i) => ({key:id + ":" + i, name, phrase})).filter(f => state.focus.has(f.key));
 
 /* The seven Ocean Literacy Principles, named as in "90min sessions/Principle Tracks". */
 const OLP = {1:"One Big Ocean", 2:"Ocean Shapes Earth", 3:"Ocean Influences Weather and Climate", 4:"Ocean Made Earth Habitable",
@@ -529,7 +550,7 @@ const PIPELINE = {
 /* =========================================================
    LOGIC
    ========================================================= */
-const state = {org:"", duration:"day", audience:"high", learners:"", themes:new Set(["reefs"]), selected:new Set(), title:null, extended:false, edits:{}};
+const state = {org:"", duration:"day", audience:"high", learners:"", themes:new Set(["reefs"]), focus:new Set(), selected:new Set(), title:null, extended:false, edits:{}};
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 /* With several themes, learners choose one, so module wording refers to
@@ -557,6 +578,8 @@ const fill = (tpl, o, html) => tpl.replace(/\{(\w+)\}/g, (_, k) => html ? esc(o[
 const plain = s => s.replace(/<\/?em>/g, "");
 const lc = s => s.charAt(0).toLowerCase() + s.slice(1);
 const uc = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* adds a comma before the last item when an item already contains "and" */
+const focusList = a => a.length === 2 && a.some(x => / and /.test(x)) ? a[0] + ", and " + a[1] : listJoin(a);
 const listJoin = a => a.length < 2 ? a.join("") : a.slice(0,-1).join(", ") + " and " + a[a.length-1];
 const ordered = () => MODULES.filter(m => state.selected.has(m.id)).sort((a,b) => a.order - b.order);
 const load = (mods = ordered()) => 2 + (state.themes.size > 1 ? 1 : 0) + (isHack() ? 1 : 0) + mods.reduce((n,m) => n + (m.build ? 2 : 1), 0);
@@ -632,12 +655,31 @@ function renderThemes(){
     `<button type="button" class="pill" role="checkbox" data-theme="${t.id}" aria-checked="${state.themes.has(t.id)}" aria-label="${esc(t.name)}" title="${esc(t.desc)}">${esc(t.name)}</button>`).join("");
 }
 
+let shownSci = new Set();
 function renderGrid(){
   const t = theme(), {suggest, flag} = analyse();
-  $("#grid").innerHTML = CATEGORIES.map((c, ci) => {
+  /* one science column per chosen theme, then the module columns.
+     1 or 2 themes: one row. 3 or 4 (hackathon): science on its own row above the modules. */
+  const ts = THEMES.filter(x => state.themes.has(x.id)), nt = ts.length;
+  const lcm = (a, b) => { let m = a; while (m % b) m += a; return m; };
+  const cols = nt >= 3 ? lcm(nt, 4) : nt + 4;
+  const g = $("#grid");
+  g.style.setProperty("--cols", cols);
+  const sci = ts.map(th => {
+    const fs = (FOCUS[th.id] || []).map(([name], i) => ({key:th.id + ":" + i, name})).sort((x,y) => x.name.localeCompare(y.name));
+    const n = fs.filter(f => state.focus.has(f.key)).length;
+    return `<section class="tcard cat sci${shownSci.has(th.id) ? "" : " new"}" style="--cc:${SCIENCE.color};--ci:${SCIENCE.ink};--ct:${SCIENCE.tint};--span:${nt >= 3 ? cols / nt : 1}">
+      <header class="cat-h"><small>Science</small><h3>${esc(th.name)}</h3><p>Pick a focus, or leave it broad</p>${n ? `<span class="count">${n}</span>` : ""}</header>
+      <div class="mods">${fs.map(f => { const on = state.focus.has(f.key), why = on && n > 2 ? `${n} focus areas: keep 1 or 2` : "";
+        return `<button type="button" class="card${why ? " flag" : ""}" data-focus="${f.key}" aria-pressed="${on}" aria-label="${esc(f.name)}">
+          ${why ? `<span class="why">${esc(why)}</span>` : ""}
+          <span class="row"><span class="ic" aria-hidden="true"></span><span>${esc(f.name)}</span></span></button>`; }).join("")}</div></section>`;
+  }).join("");
+  shownSci = new Set(ts.map(x => x.id));
+  g.innerHTML = sci + CATEGORIES.map((c, ci) => {
     const mods = MODULES.filter(m => m.cat === c.id).sort((x,y) => x.title.localeCompare(y.title));
     const n = mods.filter(m => state.selected.has(m.id)).length;
-    return `<section class="tcard cat${ci === CATEGORIES.length - 1 ? " eol" : ""}" style="--cc:${c.color};--ci:${c.ink};--ct:${c.tint}">
+    return `<section class="tcard cat${ci === CATEGORIES.length - 1 ? " eol" : ""}" style="--cc:${c.color};--ci:${c.ink};--ct:${c.tint};--span:${nt >= 3 ? cols / 4 : 1}">
       <header class="cat-h"><h3>${c.name}</h3><p>${c.hint}</p>${n ? `<span class="count">${n}</span>` : ""}</header>
       <div class="mods">${mods.map(m => {
         const on = state.selected.has(m.id);
@@ -653,7 +695,7 @@ function renderGrid(){
 
 function renderTray(){
   const mods = ordered(), {fit} = analyse();
-  $("#trayTheme").textContent = theme().name;
+  $("#trayTheme").textContent = THEMES.filter(x => state.themes.has(x.id)).map(x => { const f = focusOf(x.id); return x.name + (f.length ? ": " + f.map(y => y.name).join(", ") : ""); }).join(" + ");
   const before = mods.filter(m => m.order < DEFINE_AT), after = mods.filter(m => m.order >= DEFINE_AT);
   const seq = mods.length
     ? [...(theme().multi ? [isHack() ? "Choose a Track" : "Choose a Theme"] : []), "Explore the Basics", ...before.map(m => `<b>${esc(m.title)}</b>`),
@@ -692,8 +734,9 @@ function renderDoc(){
   if (hasFut) shapeBits.push("imagine possible futures");
   if (hasIdea) shapeBits.push("generate ideas");
   const phases = [
-    {key:"Explore", line: t.multi ? `Choose a ${t.word} and learn the science behind it through the Ocean Literacy Principles.` : `Learn the basics of ${t.topic} through the Ocean Literacy Principles.`,
-      tags: t.list.map(x => x.name)},
+    {key:"Explore", line: t.multi ? `Choose a ${t.word} and learn the science behind it through the Ocean Literacy Principles.`
+        : `Learn the basics of ${t.topic}${focusOf(t.id).length ? ", focusing on " + focusList(focusOf(t.id).map(f => f.phrase)) + "," : ""} through the Ocean Literacy Principles.`,
+      tags: t.list.flatMap(x => { const f = focusOf(x.id); return f.length ? f.map(y => (t.multi ? x.name + ": " : "") + y.name) : [x.name]; })},
     ...(invest.length ? [{key:"Investigate",
       line: invest.some(x => x.title.startsWith("Sensors")) ? "Collect their own readings and turn real data into evidence." : "Turn real data into evidence.",
       tags: invest.map(x => x.title)}] : []),
@@ -785,7 +828,7 @@ function renderDoc(){
 $("#themes").addEventListener("click", e => {
   const b = e.target.closest(".pill"); if (!b) return;
   const id = b.dataset.theme;
-  if (state.themes.has(id)){ if (state.themes.size === 1) return; state.themes.delete(id); }
+  if (state.themes.has(id)){ if (state.themes.size === 1) return; state.themes.delete(id); [...state.focus].forEach(k => { if (k.startsWith(id + ":")) state.focus.delete(k); }); }
   else {
     const wasHack = isHack();
     state.themes.add(id);
@@ -797,6 +840,13 @@ $("#themes").addEventListener("click", e => {
 });
 $("#grid").addEventListener("click", e => {
   const c = e.target.closest(".card"); if (!c) return;
+  if (c.dataset.focus){
+    const k = c.dataset.focus;
+    state.focus.has(k) ? state.focus.delete(k) : state.focus.add(k);
+    delete state.edits["phase:Explore"]; render();
+    document.querySelector(`.card[data-focus="${k}"]`).focus({preventScroll:true});
+    return;
+  }
   const id = c.dataset.id, adding = !state.selected.has(id);
   adding ? state.selected.add(id) : state.selected.delete(id);
   if (adding && load() > dur().cap){
@@ -852,7 +902,7 @@ $("#backBtn").addEventListener("click", close);
 document.addEventListener("keydown", e => { if (e.key === "Escape" && document.body.classList.contains("show")) close(); });
 $("#printBtn").addEventListener("click", () => window.print());
 $("#resetBtn").addEventListener("click", () => {
-  Object.assign(state, {org:"", duration:"day", audience:"high", learners:"", themes:new Set(["reefs"]), selected:new Set(), title:null, extended:false, edits:{}});
+  Object.assign(state, {org:"", duration:"day", audience:"high", learners:"", themes:new Set(["reefs"]), focus:new Set(), selected:new Set(), title:null, extended:false, edits:{}});
   $("#learners").value = ""; $("#org").value = ""; render();
 });
 
